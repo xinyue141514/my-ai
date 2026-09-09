@@ -896,6 +896,14 @@ const sidebar =
 document.getElementById(
 "sidebar"
 );
+    const newChatBtn =
+document.getElementById("newChat");
+
+const menuBtn =
+document.getElementById("menu");
+
+const progressBar =
+document.getElementById("progress");
 
 
 /* ===== 状态 ===== */
@@ -1204,15 +1212,11 @@ content.textContent =
 text;
 
 
-box.appendChild(
-avatar
-);
-
-box.appendChild(
-content
-);
+const row =
+document.createElement("div");
 
 row.appendChild(box);
+
 messages.appendChild(row);
 
 return content;
