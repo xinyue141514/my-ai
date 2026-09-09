@@ -1,289 +1,278 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111827">
-  <title>我的本地 AI</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的本地 AI</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
+<style>
+body{
+  margin:0;
+  font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#f4f6fa;
+  color:#111827;
+}
+header{
+  background:#111827;
+  color:white;
+  padding:18px;
+  font-size:22px;
+  font-weight:bold;
+}
+main{
+  max-width:700px;
+  margin:auto;
+  padding:30px 18px;
+  text-align:center;
+}
+.logo{
+  width:120px;
+  height:120px;
+  margin:20px auto;
+  border-radius:30px;
+  background:#111827;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:50px;
+  font-weight:bold;
+}
+p{
+  color:#6b7280;
+  line-height:1.7;
+}
+button{
+  width:100%;
+  padding:17px;
+  margin-top:20px;
+  border:0;
+  border-radius:15px;
+  background:#111827;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+}
+#status{
+  margin-top:20px;
+  padding:18px;
+  border-radius:15px;
+  background:white;
+  border:1px solid #ddd;
+  text-align:left;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+#chat{
+  display:none;
+  margin-top:20px;
+  background:white;
+  padding:18px;
+  border-radius:15px;
+}
+textarea{
+  width:100%;
+  min-height:80px;
+  box-sizing:border-box;
+  padding:12px;
+  font-size:16px;
+}
+</style>
+</head>
+
+<body>
+
+<header>🤖 我的本地 AI</header>
+
+<main>
+
+<div class="logo">AI</div>
+
+<h1>我的本地 AI</h1>
+
+<p>
+AI 模型直接运行在浏览器中。<br>
+第一次使用需要联网下载模型。
+</p>
+
+<button id="load">加载 AI</button>
+
+<div id="status">
+等待加载……
+</div>
+
+<div id="chat">
+
+<textarea id="input"
+placeholder="输入你想问的问题……"></textarea>
+
+<button id="send">发送</button>
+
+<div id="answer"></div>
+
+</div>
+
+</main>
+
+<script type="module">
+
+const MODEL =
+"Llama-3.2-1B-Instruct-q4f16_1-MLC";
+
+const status =
+document.getElementById("status");
+
+const load =
+document.getElementById("load");
+
+const chat =
+document.getElementById("chat");
+
+let engine = null;
+
+function log(text){
+  status.textContent += "\n" + text;
+}
+
+load.onclick = async function(){
+
+  load.disabled = true;
+
+  status.textContent =
+  "正在检查 WebGPU……";
+
+  try{
+
+    if(!navigator.gpu){
+      throw new Error(
+        "这个浏览器没有 WebGPU。\n请使用最新版 Chrome 或 Edge。"
+      );
     }
 
-    body {
-      margin: 0;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        "Microsoft YaHei",
-        sans-serif;
-      background: #f4f6fa;
-      color: #111827;
+    const adapter =
+      await navigator.gpu.requestAdapter();
+
+    if(!adapter){
+      throw new Error(
+        "检测到了 WebGPU，但没有可用的 GPU。"
+      );
     }
 
-    .top {
-      background: #111827;
-      color: white;
-      padding: 18px 18px 16px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
+    log("✓ WebGPU 正常");
 
-    .top-inner {
-      max-width: 900px;
-      margin: auto;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    log("正在加载 WebLLM……");
 
-    .logo-small {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: white;
-      color: #111827;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      font-weight: 800;
-    }
+    const webllm =
+      await import(
+        "https://esm.run/@mlc-ai/web-llm"
+      );
 
-    .title-box h1 {
-      margin: 0;
-      font-size: 20px;
-    }
+    log("✓ WebLLM 正常");
 
-    .title-box p {
-      margin: 4px 0 0;
-      opacity: .7;
-      font-size: 13px;
-    }
+    log("正在下载/加载 AI 模型……");
 
-    .status {
-      margin-left: auto;
-      font-size: 13px;
-      white-space: nowrap;
-    }
+    engine =
+      await webllm.CreateMLCEngine(
+        MODEL,
+        {
+          initProgressCallback:
+          function(p){
 
-    .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ef4444;
-      margin-right: 5px;
-    }
+            if(p && p.text){
+              status.textContent =
+              "正在加载 AI……\n" +
+              p.text;
+            }
 
-    .dot.ok {
-      background: #22c55e;
-    }
+          }
+        }
+      );
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 30px 16px 50px;
-    }
+    status.textContent =
+    "🎉 AI 加载成功！\n\n" +
+    "现在可以开始聊天了。";
 
-    .hero {
-      text-align: center;
-      padding: 10px 0 25px;
-    }
+    chat.style.display =
+    "block";
 
-    .logo-big {
-      width: 140px;
-      height: 140px;
-      margin: auto;
-      border-radius: 38px;
-      background: #111827;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 58px;
-      font-weight: 800;
-    }
+    load.textContent =
+    "AI 已加载";
 
-    .hero h2 {
-      font-size: 38px;
-      margin: 28px 0 15px;
-    }
+  }catch(error){
 
-    .hero p {
-      color: #6b7280;
-      font-size: 18px;
-      line-height: 1.7;
-      margin: 0 auto;
-      max-width: 700px;
-    }
+    console.error(error);
 
-    .card {
-      background: white;
-      border-radius: 22px;
-      padding: 24px;
-      margin-top: 20px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 5px 20px rgba(0,0,0,.04);
-    }
+    status.textContent =
+    "❌ 加载失败\n\n" +
+    error.message;
 
-    .card h3 {
-      margin-top: 0;
-      font-size: 22px;
-    }
+    load.disabled = false;
+    load.textContent =
+    "重新加载 AI";
 
-    .info {
-      color: #6b7280;
-      line-height: 1.8;
-    }
+  }
 
-    .info li {
-      margin-bottom: 5px;
-    }
+};
 
-    button {
-      border: 0;
-      border-radius: 16px;
-      padding: 17px 20px;
-      font-size: 18px;
-      font-weight: 700;
-      cursor: pointer;
-    }
 
-    .main-button {
-      width: 100%;
-      background: #111827;
-      color: white;
-      margin-top: 20px;
-    }
+document.getElementById("send").onclick =
+async function(){
 
-    .main-button:disabled {
-      opacity: .55;
-    }
+  if(!engine){
+    alert("请先加载 AI");
+    return;
+  }
 
-    .progress-box {
-      display: none;
-      margin-top: 20px;
-    }
+  const input =
+  document.getElementById("input");
 
-    .progress-text {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 8px;
-    }
+  const answer =
+  document.getElementById("answer");
 
-    .progress {
-      width: 100%;
-      height: 12px;
-      background: #e5e7eb;
-      border-radius: 20px;
-      overflow: hidden;
-    }
+  const text =
+  input.value.trim();
 
-    .progress-bar {
-      width: 0%;
-      height: 100%;
-      background: #111827;
-      transition: width .2s;
-    }
+  if(!text)return;
 
-    .error {
-      display: none;
-      margin-top: 20px;
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      color: #9f1239;
-      border-radius: 18px;
-      padding: 18px;
-      line-height: 1.7;
-      word-break: break-word;
-    }
+  answer.textContent =
+  "AI 正在思考……";
 
-    .chat {
-      display: none;
-    }
+  try{
 
-    .messages {
-      min-height: 180px;
-      max-height: 55vh;
-      overflow-y: auto;
-      padding: 5px;
-    }
+    const result =
+    await engine.chat.completions.create({
 
-    .message {
-      margin: 12px 0;
-      display: flex;
-    }
+      messages:[
+        {
+          role:"system",
+          content:
+          "你是一个友好的中文 AI 助手，请用中文回答。"
+        },
+        {
+          role:"user",
+          content:text
+        }
+      ],
 
-    .message.user {
-      justify-content: flex-end;
-    }
+      temperature:0.7,
+      max_tokens:300
 
-    .bubble {
-      max-width: 85%;
-      padding: 12px 15px;
-      border-radius: 16px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+    });
 
-    .message.user .bubble {
-      background: #111827;
-      color: white;
-      border-bottom-right-radius: 5px;
-    }
+    answer.textContent =
+    result.choices[0].message.content;
 
-    .message.assistant .bubble {
-      background: #f3f4f6;
-      color: #111827;
-      border-bottom-left-radius: 5px;
-    }
+  }catch(error){
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 18px;
-    }
+    answer.textContent =
+    "回答失败：\n" +
+    error.message;
 
-    textarea {
-      flex: 1;
-      resize: vertical;
-      min-height: 52px;
-      max-height: 150px;
-      border: 1px solid #d1d5db;
-      border-radius: 14px;
-      padding: 13px;
-      font-size: 16px;
-      outline: none;
-      font-family: inherit;
-    }
+  }
 
-    textarea:focus {
-      border-color: #111827;
-    }
+};
 
-    .send {
-      background: #111827;
-      color: white;
-      min-width: 85px;
-    }
+</script>
 
-    .send:disabled {
-      opacity: .5;
-    }
-
-    .small {
-      text-align: center;
-      color: #9ca3af;
-      font-size: 13px;
-      margin-top: 22px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-     
+</body>
+</html>
