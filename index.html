@@ -6,146 +6,1253 @@
 <title>我的本地 AI</title>
 
 <style>
+
+*{
+box-sizing:border-box;
+}
+
 body{
-  margin:0;
-  font-family:Arial,"Microsoft YaHei",sans-serif;
-  background:#f4f6fa;
-  color:#111827;
+margin:0;
+font-family:-apple-system,BlinkMacSystemFont,
+"Segoe UI","Microsoft YaHei",sans-serif;
+background:#fff;
+color:#171717;
+height:100vh;
+overflow:hidden;
 }
-header{
-  background:#111827;
-  color:white;
-  padding:18px;
-  font-size:22px;
-  font-weight:bold;
+
+button,
+textarea{
+font-family:inherit;
 }
-main{
-  max-width:700px;
-  margin:auto;
-  padding:30px 18px;
-  text-align:center;
+
+.app{
+display:flex;
+height:100vh;
 }
-.logo{
-  width:120px;
-  height:120px;
-  margin:20px auto;
-  border-radius:30px;
-  background:#111827;
-  color:white;
+
+/* ===== 侧边栏 ===== */
+
+.sidebar{
+width:270px;
+background:#f7f7f8;
+border-right:1px solid #ddd;
+display:flex;
+flex-direction:column;
+padding:12px;
+z-index:50;
+}
+
+.newchat{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:10px;
+background:#fff;
+font-size:15px;
+text-align:left;
+cursor:pointer;
+}
+
+.newchat:active{
+background:#eee;
+}
+
+.history{
+flex:1;
+overflow-y:auto;
+margin-top:15px;
+}
+
+.history-title{
+font-size:12px;
+color:#888;
+padding:8px;
+}
+
+.chat-item{
+display:flex;
+align-items:center;
+gap:6px;
+padding:10px;
+border-radius:8px;
+margin-bottom:3px;
+font-size:14px;
+cursor:pointer;
+}
+
+.chat-item:hover{
+background:#e9e9e9;
+}
+
+.chat-item.active{
+background:#e3e3e3;
+}
+
+.chat-title{
+flex:1;
+min-width:0;
+overflow:hidden;
+white-space:nowrap;
+text-overflow:ellipsis;
+}
+
+.delete-chat{
+border:0;
+background:transparent;
+color:#999;
+font-size:18px;
+padding:2px 6px;
+cursor:pointer;
+}
+
+.delete-chat:hover{
+color:#d33;
+}
+
+.sidebar-bottom{
+border-top:1px solid #ddd;
+padding-top:12px;
+font-size:12px;
+line-height:1.6;
+color:#888;
+}
+
+/* ===== 主区域 ===== */
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+min-width:0;
+position:relative;
+}
+
+.header{
+height:58px;
+border-bottom:1px solid #eee;
+display:flex;
+align-items:center;
+padding:0 16px;
+gap:12px;
+background:#fff;
+z-index:5;
+}
+
+.menu{
+display:none;
+border:0;
+background:none;
+font-size:24px;
+padding:4px;
+cursor:pointer;
+}
+
+.header-title{
+font-weight:600;
+font-size:16px;
+}
+
+.status{
+margin-left:auto;
+font-size:12px;
+color:#777;
+}
+
+.dot{
+display:inline-block;
+width:8px;
+height:8px;
+border-radius:50%;
+background:#999;
+margin-right:5px;
+}
+
+.dot.ok{
+background:#20a464;
+}
+
+/* ===== 消息区域 ===== */
+
+.messages{
+flex:1;
+overflow-y:auto;
+padding:30px 16px 150px;
+-webkit-overflow-scrolling:touch;
+}
+
+.message{
+max-width:800px;
+margin:0 auto 28px;
+display:flex;
+gap:14px;
+}
+
+.avatar{
+width:32px;
+height:32px;
+min-width:32px;
+border-radius:8px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#111827;
+color:white;
+font-size:14px;
+}
+
+.user .avatar{
+background:#ddd;
+color:#333;
+}
+
+.content{
+flex:1;
+line-height:1.75;
+font-size:15px;
+white-space:pre-wrap;
+word-break:break-word;
+padding-top:3px;
+}
+
+/* ===== 欢迎页 ===== */
+
+.welcome{
+max-width:700px;
+margin:80px auto;
+text-align:center;
+}
+
+.welcome-logo{
+width:70px;
+height:70px;
+margin:auto;
+border-radius:20px;
+background:#111827;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:30px;
+font-weight:bold;
+}
+
+.welcome h1{
+font-size:28px;
+margin:22px 0 10px;
+}
+
+.welcome p{
+color:#777;
+line-height:1.7;
+}
+
+/* ===== 输入区域 ===== */
+
+.input-area{
+position:fixed;
+bottom:0;
+left:270px;
+right:0;
+padding:12px 16px 18px;
+background:linear-gradient(
+transparent,
+#fff 25%
+);
+z-index:10;
+}
+
+.input-box{
+max-width:800px;
+margin:auto;
+display:flex;
+align-items:flex-end;
+border:1px solid #d9d9d9;
+border-radius:16px;
+padding:8px;
+background:#fff;
+box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+
+textarea{
+flex:1;
+border:0;
+outline:0;
+resize:none;
+min-height:42px;
+max-height:130px;
+padding:9px;
+font-size:15px;
+line-height:1.5;
+background:transparent;
+}
+
+.send{
+width:42px;
+height:42px;
+border:0;
+border-radius:10px;
+background:#111827;
+color:#fff;
+font-size:20px;
+cursor:pointer;
+}
+
+.send:disabled{
+opacity:.4;
+cursor:default;
+}
+
+.tip{
+text-align:center;
+font-size:11px;
+color:#999;
+margin-top:7px;
+}
+
+/* ===== 加载页面 ===== */
+
+.loading{
+position:fixed;
+inset:0;
+background:#fff;
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:100;
+}
+
+.loading-box{
+width:90%;
+max-width:400px;
+text-align:center;
+}
+
+.loading-logo{
+width:80px;
+height:80px;
+margin:0 auto 25px;
+border-radius:22px;
+background:#111827;
+color:#fff;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:35px;
+font-weight:bold;
+}
+
+.loading h2{
+margin:0 0 10px;
+}
+
+.loading-text{
+color:#777;
+min-height:55px;
+font-size:14px;
+line-height:1.6;
+white-space:pre-line;
+}
+
+.progress{
+height:8px;
+background:#eee;
+border-radius:10px;
+overflow:hidden;
+margin-top:18px;
+}
+
+.progress-bar{
+width:0%;
+height:100%;
+background:#111827;
+transition:width .2s;
+}
+
+.retry{
+display:none;
+width:100%;
+margin-top:20px;
+padding:13px;
+border:0;
+border-radius:10px;
+background:#111827;
+color:#fff;
+font-size:16px;
+cursor:pointer;
+}
+
+/* ===== 手机 ===== */
+
+@media(max-width:700px){
+
+.sidebar{
+position:fixed;
+left:-280px;
+top:0;
+bottom:0;
+transition:left .2s;
+box-shadow:4px 0 20px rgba(0,0,0,.12);
+}
+
+.sidebar.open{
+left:0;
+}
+
+.menu{
+display:block;
+}
+
+.input-area{
+left:0;
+padding:8px 10px 12px;
+}
+
+.messages{
+padding:20px 12px 145px;
+}
+
+.message{
+    display:flex;
+  gap:10px;
+  margin-bottom:18px;
+  align-items:flex-start;
+}
+
+.message.user{
+  flex-direction:row-reverse;
+}
+
+.avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:50px;
-  font-weight:bold;
+  flex-shrink:0;
+  font-size:18px;
+  background:#e5e7eb;
 }
-p{
+
+.message.user .avatar{
+  background:#111827;
+  color:white;
+}
+
+.content{
+  max-width:78%;
+  padding:12px 15px;
+  border-radius:16px;
+  line-height:1.7;
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:white;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+
+.message.user .content{
+  background:#111827;
+  color:white;
+}
+
+.welcome{
+  max-width:700px;
+  margin:80px auto;
+  text-align:center;
+  color:#374151;
+}
+
+.welcome h1{
+  font-size:30px;
+  margin-bottom:12px;
+}
+
+.welcome p{
   color:#6b7280;
   line-height:1.7;
 }
-button{
-  width:100%;
-  padding:17px;
-  margin-top:20px;
+
+.input-area{
+  position:fixed;
+  left:260px;
+  right:0;
+  bottom:0;
+  padding:14px 20px 20px;
+  background:linear-gradient(
+    to top,
+    #f5f7fb 75%,
+    rgba(245,247,251,0)
+  );
+}
+
+.input-box{
+  max-width:850px;
+  margin:auto;
+  display:flex;
+  gap:10px;
+  align-items:flex-end;
+  background:white;
+  border:1px solid #d1d5db;
+  border-radius:18px;
+  padding:10px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+
+textarea{
+  flex:1;
   border:0;
-  border-radius:15px;
+  outline:0;
+  resize:none;
+  min-height:24px;
+  max-height:150px;
+  font-size:16px;
+  line-height:1.5;
+  font-family:inherit;
+  background:transparent;
+}
+
+.send{
+  width:44px;
+  height:44px;
+  border:0;
+  border-radius:12px;
   background:#111827;
   color:white;
   font-size:18px;
-  font-weight:bold;
+  cursor:pointer;
 }
-#status{
-  margin-top:20px;
-  padding:18px;
-  border-radius:15px;
-  background:white;
-  border:1px solid #ddd;
-  text-align:left;
-  white-space:pre-wrap;
-  word-break:break-word;
+
+.send:disabled{
+  opacity:.5;
+  cursor:not-allowed;
 }
-#chat{
+
+.loading{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  background:#f5f7fb;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:20px;
+}
+
+.loading h2{
+  margin-bottom:10px;
+}
+
+.loading p{
+  white-space:pre-line;
+  color:#6b7280;
+  line-height:1.7;
+}
+
+.progress{
+  width:280px;
+  height:8px;
+  background:#e5e7eb;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:18px;
+}
+
+.progress-bar{
+  width:0%;
+  height:100%;
+  background:#111827;
+  transition:width .2s;
+}
+
+.retry{
   display:none;
-  margin-top:20px;
-  background:white;
-  padding:18px;
-  border-radius:15px;
+  margin-top:18px;
+  padding:10px 18px;
+  border:0;
+  border-radius:10px;
+  background:#111827;
+  color:white;
+  cursor:pointer;
 }
-textarea{
-  width:100%;
-  min-height:80px;
-  box-sizing:border-box;
-  padding:12px;
-  font-size:16px;
+
+@media(max-width:700px){
+
+  .sidebar{
+    left:-280px;
+    width:280px;
+  }
+
+  .sidebar.open{
+    left:0;
+  }
+
+  .main{
+    left:0;
+  }
+
+  .menu{
+    display:block;
+  }
+
+  .input-area{
+    left:0;
+    padding:8px 10px 12px;
+  }
+
+  .messages{
+    padding:20px 12px 145px;
+  }
+
+  .content{
+    max-width:85%;
+  }
+
+  .header{
+    padding:12px 15px;
+  }
+
+  .welcome{
+    margin:60px 20px;
+  }
+
+  .welcome h1{
+    font-size:25px;
+  }
 }
+
 </style>
 </head>
-
 <body>
 
-<header>🤖 我的本地 AI</header>
+<!-- ===== AI 加载页面 ===== -->
 
-<main>
+<div class="loading" id="loading">
 
-<div class="logo">AI</div>
+<div class="loading-box">
 
-<h1>我的本地 AI</h1>
+<div class="loading-logo">
+AI
+</div>
+
+<h2>我的本地 AI</h2>
+
+<div
+class="loading-text"
+id="loadingText">
+正在准备 AI……
+</div>
+
+<div class="progress">
+
+<div
+class="progress-bar"
+id="progress">
+</div>
+
+</div>
+
+<button
+class="retry"
+id="retry">
+重新加载
+</button>
+
+</div>
+
+</div>
+
+
+<!-- ===== 主应用 ===== -->
+
+<div class="app">
+
+
+<!-- ===== 侧边栏 ===== -->
+
+<aside
+class="sidebar"
+id="sidebar">
+
+<button
+class="newchat"
+id="newChat">
+
+＋ 新建聊天
+
+</button>
+
+
+<div class="history">
+
+<div class="history-title">
+聊天记录
+</div>
+
+<div id="historyList">
+</div>
+
+</div>
+
+
+<div class="sidebar-bottom">
+
+🧠 本地 AI<br>
+
+模型：LFM2.5 350M<br>
+
+聊天记录保存在本机浏览器
+
+</div>
+
+</aside>
+
+
+<!-- ===== 主区域 ===== -->
+
+<section class="main">
+
+
+<header class="header">
+
+<button
+class="menu"
+id="menu">
+☰
+</button>
+
+
+<div class="header-title">
+我的本地 AI
+</div>
+
+
+<div class="status">
+
+<span
+class="dot"
+id="dot">
+</span>
+
+<span id="status">
+正在启动
+</span>
+
+</div>
+
+</header>
+
+
+<!-- ===== 消息 ===== -->
+
+<div
+class="messages"
+id="messages">
+
+<div class="welcome">
+
+<div class="welcome-logo">
+AI
+</div>
+
+<h1>
+有什么可以帮你的？
+</h1>
 
 <p>
-AI 模型直接运行在浏览器中。<br>
-第一次使用需要联网下载模型。
+这是运行在你手机浏览器里的本地 AI。
+<br>
+你可以连续聊天，聊天记录会自动保存。
 </p>
 
-<button id="load">加载 AI</button>
-
-<div id="status">
-等待加载……
 </div>
-
-<div id="chat">
-
-<textarea id="input"
-placeholder="输入你想问的问题……"></textarea>
-
-<button id="send">发送</button>
-
-<div id="answer"></div>
 
 </div>
 
-</main>
+
+<!-- ===== 输入框 ===== -->
+
+<div class="input-area">
+
+<div class="input-box">
+
+<textarea
+id="input"
+rows="1"
+placeholder="给 AI 发送消息……">
+</textarea>
+
+
+<button
+class="send"
+id="send"
+disabled>
+
+↑
+
+</button>
+
+</div>
+
+
+<div class="tip">
+Enter 发送 · Shift + Enter 换行
+</div>
+
+</div>
+
+
+</section>
+
+</div>
+
 
 <script type="module">
 
+
+/* ===== 模型 ===== */
+
+/*
+保持你现在已经成功运行的模型。
+不要改成 Llama。
+*/
+
 const MODEL =
-"Llama-3.2-1B-Instruct-q4f16_1-MLC";
+"LFM2.5-350M-Instruct-q4f16_1-MLC";
 
-const status =
-document.getElementById("status");
 
-const load =
-document.getElementById("load");
-
-const chat =
-document.getElementById("chat");
+/* ===== 全局变量 ===== */
 
 let engine = null;
 
-function log(text){
-  status.textContent += "\n" + text;
+let currentChat = null;
+
+
+/* ===== 读取本地聊天记录 ===== */
+
+let chats =
+JSON.parse(
+localStorage.getItem(
+"myAI_chats"
+) || "{}"
+);
+
+
+/* ===== 获取页面元素 ===== */
+
+const loading =
+document.getElementById(
+"loading"
+);
+
+const loadingText =
+document.getElementById(
+"loadingText"
+);
+
+const progress =
+document.getElementById(
+"progress"
+);
+
+const retry =
+document.getElementById(
+"retry"
+);
+
+const messages =
+document.getElementById(
+"messages"
+);
+
+const input =
+document.getElementById(
+"input"
+);
+
+const send =
+document.getElementById(
+"send"
+);
+
+const status =
+document.getElementById(
+"status"
+);
+
+const dot =
+document.getElementById(
+"dot"
+);
+
+const historyList =
+document.getElementById(
+"historyList"
+);
+
+const sidebar =
+document.getElementById(
+"sidebar"
+);
+
+
+/* ===== 状态 ===== */
+
+function setStatus(
+text,
+ok=false
+){
+
+status.textContent =
+text;
+
+dot.classList.toggle(
+"ok",
+ok
+);
+
 }
 
-load.onclick = async function(){
 
-  load.disabled = true;
+/* ===== 保存聊天 ===== */
 
-  status.textContent =
-  "正在检查 WebGPU……";
+function saveChats(){
+
+localStorage.setItem(
+"myAI_chats",
+JSON.stringify(chats)
+);
+
+}
+
+
+/* ===== 新建聊天 ===== */
+
+function newChat(){
+
+const id =
+Date.now().toString();
+
+
+chats[id] = {
+
+title:"新聊天",
+
+messages:[]
+
+};
+
+
+currentChat = id;
+
+
+saveChats();
+
+renderHistory();
+
+renderMessages();
+
+sidebar.classList.remove(
+"open"
+);
+
+input.focus();
+
+}
+
+
+/* ===== 删除聊天 ===== */
+
+function deleteChat(id){
+
+if(!chats[id]){
+return;
+}
+
+
+delete chats[id];
+
+saveChats();
+
+
+const ids =
+Object.keys(chats);
+
+
+if(ids.length === 0){
+
+currentChat = null;
+
+renderHistory();
+
+renderMessages();
+
+return;
+
+}
+
+
+if(currentChat === id){
+
+currentChat =
+ids[ids.length - 1];
+
+}
+
+
+renderHistory();
+
+renderMessages();
+
+}
+
+
+/* ===== 聊天记录列表 ===== */
+
+function renderHistory(){
+
+historyList.innerHTML = "";
+
+
+const ids =
+Object.keys(chats).reverse();
+
+
+ids.forEach(id=>{
+
+const item =
+document.createElement(
+"div"
+);
+
+item.className =
+"chat-item" +
+(
+id === currentChat
+? " active"
+: ""
+);
+
+
+const title =
+document.createElement(
+"div"
+);
+
+title.className =
+"chat-title";
+
+title.textContent =
+chats[id].title;
+
+
+const del =
+document.createElement(
+"button"
+);
+
+del.className =
+"delete-chat";
+
+del.textContent =
+"×";
+
+del.title =
+"删除聊天";
+
+
+del.onclick =
+e=>{
+
+e.stopPropagation();
+
+
+if(
+confirm(
+"确定删除这个聊天吗？"
+)
+){
+
+deleteChat(id);
+
+}
+
+};
+
+
+item.onclick =
+()=>{
+
+currentChat = id;
+
+renderHistory();
+
+renderMessages();
+
+sidebar.classList.remove(
+"open"
+);
+
+};
+
+
+item.appendChild(title);
+
+item.appendChild(del);
+
+historyList.appendChild(item);
+
+});
+
+}
+
+
+/* ===== 显示所有消息 ===== */
+
+function renderMessages(){
+
+messages.innerHTML = "";
+
+
+if(
+!currentChat ||
+!chats[currentChat]
+){
+
+messages.innerHTML = `
+
+<div class="welcome">
+
+<div class="welcome-logo">
+AI
+</div>
+
+<h1>
+有什么可以帮你的？
+</h1>
+
+<p>
+这是运行在你手机浏览器里的本地 AI。
+<br>
+你可以连续聊天，聊天记录会自动保存。
+</p>
+
+</div>
+
+`;
+
+return;
+
+}
+
+
+chats[currentChat]
+.messages
+.forEach(message=>{
+
+addMessageElement(
+message.role,
+message.content
+);
+
+});
+
+}
+
+
+/* ===== 创建消息 ===== */
+
+function addMessageElement(
+role,
+text
+){
+
+const box =
+document.createElement(
+"div"
+);
+
+box.className =
+"message " + role;
+
+
+const avatar =
+document.createElement(
+"div"
+);
+
+avatar.className =
+"avatar";
+
+avatar.textContent =
+role === "user"
+? "你"
+: "AI";
+
+
+const content =
+document.createElement(
+"div"
+);
+
+content.className =
+"content";
+
+content.textContent =
+text;
+
+
+box.appendChild(
+avatar
+);
+
+box.appendChild(
+content
+);
+
+row.appendChild(box);
+messages.appendChild(row);
+
+return content;
+}
+
+function renderMessages(){
+  messages.innerHTML = "";
+
+  const chat = chats[currentChat];
+  if(!chat || chat.messages.length === 0){
+    messages.innerHTML = `
+      <div class="welcome">
+        <h1>你好 👋</h1>
+        <p>我是你的本地 AI 助手。<br>
+        可以连续聊天，聊天记录会保存在本机。</p>
+      </div>
+    `;
+    return;
+  }
+
+  chat.messages.forEach(m => {
+    addMessageElement(m.role,m.content);
+  });
+
+  messages.scrollTop = messages.scrollHeight;
+}
+  /* ===== 加载 AI ===== */
+
+async function loadAI(){
+
+  retry.style.display = "none";
+
+  loadingText.textContent =
+    "正在检查 WebGPU……";
 
   try{
 
     if(!navigator.gpu){
       throw new Error(
-        "这个浏览器没有 WebGPU。\n请使用最新版 Chrome 或 Edge。"
+        "当前浏览器不支持 WebGPU，请使用新版 Chrome。"
       );
     }
 
@@ -154,123 +1261,339 @@ load.onclick = async function(){
 
     if(!adapter){
       throw new Error(
-        "检测到了 WebGPU，但没有可用的 GPU。"
+        "没有找到可用的 GPU。"
       );
     }
 
-    log("✓ WebGPU 正常");
-
-    log("正在加载 WebLLM……");
+    loadingText.textContent =
+      "✓ WebGPU 正常\n正在加载 WebLLM……";
 
     const webllm =
       await import(
         "https://esm.run/@mlc-ai/web-llm"
       );
 
-    log("✓ WebLLM 正常");
-
-    log("正在下载/加载 AI 模型……");
+    loadingText.textContent =
+      "✓ WebLLM 正常\n正在加载 AI 模型……";
 
     engine =
       await webllm.CreateMLCEngine(
         MODEL,
         {
-          initProgressCallback:
-          function(p){
+          initProgressCallback: p => {
 
-            if(p && p.text){
-              status.textContent =
-              "正在加载 AI……\n" +
-              p.text;
-            }
+            const percent =
+              Math.round(
+                (p.progress || 0) * 100
+              );
 
+            progressBar.style.width =
+              percent + "%";
+
+            loadingText.textContent =
+              "正在加载 AI 模型……\n" +
+              (p.text || "") +
+              "\n" +
+              percent +
+              "%";
           }
         }
       );
 
-    status.textContent =
-    "🎉 AI 加载成功！\n\n" +
-    "现在可以开始聊天了。";
+    loading.style.display = "none";
 
-    chat.style.display =
-    "block";
+    setStatus(
+      "AI 已加载",
+      true
+    );
 
-    load.textContent =
-    "AI 已加载";
+    if(!currentChat){
+      newChat();
+    }
 
   }catch(error){
 
     console.error(error);
 
-    status.textContent =
-    "❌ 加载失败\n\n" +
-    error.message;
+    loadingText.textContent =
+      "AI 加载失败\n\n" +
+      error.message;
 
-    load.disabled = false;
-    load.textContent =
-    "重新加载 AI";
+    retry.style.display =
+      "inline-block";
 
+    setStatus(
+      "加载失败",
+      false
+    );
   }
+}
 
-};
 
+/* ===== 发送消息 ===== */
 
-document.getElementById("send").onclick =
-async function(){
+async function sendMessage(){
 
-  if(!engine){
-    alert("请先加载 AI");
+  const text =
+    input.value.trim();
+
+  if(!text || !engine){
     return;
   }
 
-  const input =
-  document.getElementById("input");
+  if(!currentChat){
+    newChat();
+  }
 
-  const answer =
-  document.getElementById("answer");
+  const chat =
+    chats[currentChat];
 
-  const text =
-  input.value.trim();
+  if(chat.messages.length === 0){
 
-  if(!text)return;
+    chat.title =
+      text.length > 18
+        ? text.slice(0,18) + "…"
+        : text;
 
-  answer.textContent =
-  "AI 正在思考……";
+    renderHistory();
+  }
+
+  chat.messages.push({
+    role:"user",
+    content:text
+  });
+
+  saveChats();
+
+  const welcome =
+    document.querySelector(".welcome");
+
+  if(welcome){
+    welcome.remove();
+  }
+
+  addMessageElement(
+    "user",
+    text
+  );
+
+  input.value = "";
+  input.style.height = "auto";
+
+  send.disabled = true;
+
+  setStatus(
+    "正在思考……",
+    false
+  );
+
+  const assistantContent =
+    addMessageElement(
+      "assistant",
+      "正在思考……"
+    );
+
+  let answer = "";
 
   try{
 
-    const result =
-    await engine.chat.completions.create({
+    const history = [
+      {
+        role:"system",
+        content:
+          "你是一个友好、聪明、简洁的中文 AI 助手。请直接回答问题。如果不知道答案，请诚实说明。"
+      },
+      ...chat.messages
+    ];
 
-      messages:[
-        {
-          role:"system",
-          content:
-          "你是一个友好的中文 AI 助手，请用中文回答。"
-        },
-        {
-          role:"user",
-          content:text
-        }
-      ],
+    const response =
+      await engine.chat.completions.create({
 
-      temperature:0.7,
-      max_tokens:300
+        messages:history,
 
+        temperature:0.7,
+
+        max_tokens:300,
+
+        stream:true
+      });
+
+    assistantContent.textContent = "";
+
+    for await(
+      const chunk of response
+    ){
+
+      const piece =
+        chunk.choices?.[0]?.delta?.content;
+
+      if(piece){
+
+        answer += piece;
+
+        assistantContent.textContent =
+          answer;
+
+        messages.scrollTop =
+          messages.scrollHeight;
+      }
+    }
+
+    chat.messages.push({
+      role:"assistant",
+      content:answer
     });
 
-    answer.textContent =
-    result.choices[0].message.content;
+    saveChats();
+
+    setStatus(
+      "AI 已加载",
+      true
+    );
 
   }catch(error){
 
-    answer.textContent =
-    "回答失败：\n" +
-    error.message;
+    console.error(error);
 
+    assistantContent.textContent =
+      "抱歉，刚才回答时出现错误：\n" +
+      error.message;
+
+    setStatus(
+      "回答出错",
+      false
+    );
+
+  }finally{
+
+    send.disabled = false;
+
+    input.focus();
   }
+}
 
-};
+
+/* ===== 新建聊天 ===== */
+
+newChatBtn.addEventListener(
+  "click",
+  () => {
+
+    newChat();
+
+    if(
+      window.innerWidth <= 700
+    ){
+      sidebar.classList.remove(
+        "open"
+      );
+    }
+  }
+);
+
+
+/* ===== 手机菜单 ===== */
+
+menuBtn.addEventListener(
+  "click",
+  () => {
+
+    sidebar.classList.toggle(
+      "open"
+    );
+  }
+);
+
+
+/* ===== 点击聊天区域关闭菜单 ===== */
+
+messages.addEventListener(
+  "click",
+  () => {
+
+    if(
+      window.innerWidth <= 700
+    ){
+
+      sidebar.classList.remove(
+        "open"
+      );
+    }
+  }
+);
+
+
+/* ===== 发送按钮 ===== */
+
+send.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+/* ===== 回车发送 ===== */
+
+input.addEventListener(
+  "keydown",
+  e => {
+
+    if(
+      e.key === "Enter" &&
+      !e.shiftKey
+    ){
+
+      e.preventDefault();
+
+      sendMessage();
+    }
+  }
+);
+
+
+/* ===== 输入框自动变高 ===== */
+
+input.addEventListener(
+  "input",
+  () => {
+
+    input.style.height =
+      "auto";
+
+    input.style.height =
+      Math.min(
+        input.scrollHeight,
+        150
+      ) + "px";
+  }
+);
+
+
+/* ===== 重新加载 ===== */
+
+retry.addEventListener(
+  "click",
+  () => {
+
+    loading.style.display =
+      "flex";
+
+    progressBar.style.width =
+      "0%";
+
+    loadAI();
+  }
+);
+
+
+/* ===== 启动 ===== */
+
+renderHistory();
+
+if(currentChat){
+  renderMessages();
+}
+
+loadAI();
 
 </script>
 
