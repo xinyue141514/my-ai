@@ -1,1937 +1,2280 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
-
-<meta
-  name="theme-color"
-  content="#f5f7fb"
->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="我的本地 AI - 浏览器本地运行的 AI 助手">
 
 <title>我的本地 AI</title>
 
 <style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-/* =========================
-   基础
-========================= */
-
-*{
-  box-sizing:border-box;
+:root {
+    --bg: #f7f8fc;
+    --panel: #ffffff;
+    --panel2: #f1f3f7;
+    --text: #172033;
+    --muted: #70798b;
+    --border: #e3e6ed;
+    --primary: #1f2937;
+    --primary-hover: #111827;
+    --user: #e8eefc;
+    --assistant: #ffffff;
+    --danger: #dc2626;
+    --shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
 }
 
 html,
-body{
-  margin:0;
-  padding:0;
-  width:100%;
-  height:100%;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Microsoft YaHei",
-    sans-serif;
-  background:#f5f7fb;
-  color:#111827;
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
-body{
-  overflow:hidden;
+body {
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans SC",
+        "Microsoft YaHei",
+        Arial,
+        sans-serif;
+    background: var(--bg);
+    color: var(--text);
 }
-
-button,
-textarea{
-  font-family:inherit;
-}
-
 
 /* =========================
-   整体布局
+   Loading
 ========================= */
 
-.app{
-  width:100%;
-  height:100vh;
-  position:relative;
+.loading {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f8fc;
+    padding: 24px;
 }
 
-.sidebar{
-  position:fixed;
-  left:0;
-  top:0;
-  bottom:0;
-  width:260px;
-  background:#ffffff;
-  border-right:1px solid #e5e7eb;
-  z-index:30;
-  display:flex;
-  flex-direction:column;
-  transition:left .25s ease;
+.loading.hidden {
+    display: none;
 }
 
-.main{
-  position:absolute;
-  left:260px;
-  top:0;
-  right:0;
-  bottom:0;
-  display:flex;
-  flex-direction:column;
-  min-width:0;
+.loading-box {
+    width: min(620px, 100%);
+    text-align: center;
 }
 
+.logo {
+    width: 174px;
+    height: 174px;
+    margin: 0 auto 38px;
+    border-radius: 48px;
+    background: #111827;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 76px;
+    font-weight: 400;
+    box-shadow: var(--shadow);
+}
+
+.loading-title {
+    font-size: 42px;
+    line-height: 1.2;
+    font-weight: 700;
+    margin-bottom: 22px;
+}
+
+.loading-status {
+    min-height: 36px;
+    font-size: 24px;
+    color: var(--muted);
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.loading-error {
+    margin-top: 18px;
+    padding: 16px;
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: break-word;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+.progress-wrap {
+    width: 100%;
+    height: 18px;
+    margin-top: 28px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e5e7eb;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: #1f2937;
+    transition: width 0.2s ease;
+}
+
+.loading-percent {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 16px;
+}
+
+.loading-actions {
+    margin-top: 26px;
+}
+
+.btn {
+    border: 0;
+    border-radius: 14px;
+    padding: 15px 28px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    color: white;
+    background: #1f2937;
+}
+
+.btn-primary:hover {
+    background: #111827;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
 
 /* =========================
-   侧边栏
+   App
 ========================= */
 
-.sidebar-top{
-  padding:15px;
+.app {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
 }
 
-.newchat{
-  width:100%;
-  height:46px;
-  border:1px solid #d1d5db;
-  border-radius:12px;
-  background:#ffffff;
-  color:#111827;
-  font-size:15px;
-  cursor:pointer;
+.app.hidden {
+    display: none;
 }
-
-.newchat:hover{
-  background:#f3f4f6;
-}
-
-.history-title{
-  padding:8px 15px;
-  color:#6b7280;
-  font-size:13px;
-}
-
-.history{
-  flex:1;
-  overflow-y:auto;
-  padding:5px 10px 20px;
-}
-
-.chat-item{
-  width:100%;
-  min-height:44px;
-  margin-bottom:5px;
-  padding:0 8px 0 12px;
-  border-radius:10px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  cursor:pointer;
-  color:#374151;
-}
-
-.chat-item:hover{
-  background:#f3f4f6;
-}
-
-.chat-item.active{
-  background:#e5e7eb;
-  color:#111827;
-}
-
-.chat-title{
-  flex:1;
-  min-width:0;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-  font-size:14px;
-}
-
-.delete-chat{
-  width:30px;
-  height:30px;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  color:#9ca3af;
-  cursor:pointer;
-  font-size:16px;
-}
-
-.delete-chat:hover{
-  background:#fee2e2;
-  color:#dc2626;
-}
-
 
 /* =========================
-   顶部
+   Sidebar
 ========================= */
 
-.header{
-  height:62px;
-  flex-shrink:0;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:0 20px;
-  background:rgba(255,255,255,.92);
-  border-bottom:1px solid #e5e7eb;
-  backdrop-filter:blur(10px);
+.sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: #eef0f5;
+    border-right: 1px solid var(--border);
+    transition: transform 0.25s ease;
 }
 
-.menu{
-  display:none;
-  width:40px;
-  height:40px;
-  border:0;
-  border-radius:10px;
-  background:transparent;
-  font-size:22px;
-  cursor:pointer;
+.sidebar-header {
+    padding: 18px;
 }
 
-.header-title{
-  font-size:17px;
-  font-weight:600;
+.new-chat {
+    width: 100%;
+    border: 0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #1f2937;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
 }
 
-.status{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:13px;
-  color:#6b7280;
+.new-chat:hover {
+    background: #111827;
 }
 
-.status-dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#f59e0b;
+.history-title {
+    padding: 8px 18px 10px;
+    color: #7b8494;
+    font-size: 13px;
+    font-weight: 700;
 }
 
-.status.ok .status-dot{
-  background:#10b981;
+.history {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 10px 18px;
 }
 
-.status.error .status-dot{
-  background:#ef4444;
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 11px 10px;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
 }
 
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.history-item.active {
+    background: #ffffff;
+}
+
+.history-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: #303849;
+    font-size: 14px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.history-delete {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #9aa1ad;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.history-delete:hover {
+    color: var(--danger);
+    background: #fee2e2;
+}
 
 /* =========================
-   消息区域
+   Main
 ========================= */
 
-.messages{
-  flex:1;
-  overflow-y:auto;
-  padding:25px 20px 150px;
-  scroll-behavior:smooth;
+.main {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: var(--bg);
 }
 
-.message{
-  width:100%;
-  max-width:900px;
-  margin:0 auto 20px;
-  display:flex;
-  gap:10px;
-  align-items:flex-start;
+.topbar {
+    height: 62px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px;
+    background: rgba(247, 248, 252, 0.94);
+    border-bottom: 1px solid var(--border);
 }
 
-.message.user{
-  flex-direction:row-reverse;
+.menu-btn {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 23px;
 }
 
-.avatar{
-  width:38px;
-  height:38px;
-  flex-shrink:0;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#e5e7eb;
-  font-size:18px;
+.chat-title {
+    flex: 1;
+    min-width: 0;
 }
 
-.message.user .avatar{
-  background:#111827;
-  color:#ffffff;
+.chat-title-main {
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.content{
-  max-width:78%;
-  padding:12px 15px;
-  border-radius:16px;
-  background:#ffffff;
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
-  color:#1f2937;
-  line-height:1.7;
-  white-space:pre-wrap;
-  word-break:break-word;
+.status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #7b8494;
+    font-size: 13px;
 }
 
-.message.user .content{
-  background:#111827;
-  color:#ffffff;
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
 }
 
+.status-dot.ready {
+    background: #16a34a;
+}
+
+.status-dot.loading {
+    background: #f59e0b;
+}
+
+.status-dot.error {
+    background: #dc2626;
+}
 
 /* =========================
-   欢迎页
+   Messages
 ========================= */
 
-.welcome{
-  max-width:700px;
-  margin:70px auto;
-  text-align:center;
-  padding:20px;
+.messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 28px 18px 150px;
 }
 
-.welcome-icon{
-  width:76px;
-  height:76px;
-  margin:0 auto 20px;
-  border-radius:24px;
-  background:#111827;
-  color:#ffffff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:35px;
+.messages-inner {
+    width: min(900px, 100%);
+    margin: 0 auto;
 }
 
-.welcome h1{
-  margin:0 0 12px;
-  font-size:30px;
+.empty {
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    color: var(--muted);
 }
 
-.welcome p{
-  margin:0;
-  color:#6b7280;
-  line-height:1.8;
+.empty-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 18px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111827;
+    color: white;
+    font-size: 32px;
 }
 
+.empty-title {
+    font-size: 26px;
+    color: var(--text);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+}
+
+.message.user {
+    flex-direction: row-reverse;
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1f2937;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.message.user .avatar {
+    background: #dbe5ff;
+    color: #334155;
+}
+
+.content {
+    max-width: min(760px, calc(100% - 60px));
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: var(--assistant);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.message.user .content {
+    background: var(--user);
+    border-color: #d8e1f7;
+}
+
+.message-text {
+    font-size: 16px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.message-meta {
+    margin-top: 7px;
+    color: #9aa1ad;
+    font-size: 11px;
+}
 
 /* =========================
-   输入区域
+   Composer
 ========================= */
 
-.input-area{
-  position:fixed;
-  left:260px;
-  right:0;
-  bottom:0;
-  padding:12px 20px 20px;
-  background:
-    linear-gradient(
-      to top,
-      #f5f7fb 75%,
-      rgba(245,247,251,0)
+.composer-area {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 18px 18px;
+    background: linear-gradient(
+        to bottom,
+        rgba(247, 248, 252, 0),
+        rgba(247, 248, 252, 0.96) 28%
     );
 }
 
-.input-box{
-  width:100%;
-  max-width:900px;
-  margin:auto;
-  display:flex;
-  align-items:flex-end;
-  gap:10px;
-  padding:10px;
-  background:#ffffff;
-  border:1px solid #d1d5db;
-  border-radius:18px;
-  box-shadow:0 4px 20px rgba(0,0,0,.08);
+.composer {
+    width: min(900px, 100%);
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
 }
 
-textarea{
-  flex:1;
-  min-width:0;
-  min-height:26px;
-  max-height:150px;
-  padding:8px 4px;
-  border:0;
-  outline:0;
-  resize:none;
-  background:transparent;
-  font-size:16px;
-  line-height:1.5;
-  color:#111827;
+.input {
+    flex: 1;
+    min-width: 0;
+    max-height: 180px;
+    min-height: 46px;
+    resize: none;
+    border: 0;
+    outline: 0;
+    padding: 10px 8px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.5;
 }
 
-.send{
-  width:44px;
-  height:44px;
-  flex-shrink:0;
-  border:0;
-  border-radius:12px;
-  background:#111827;
-  color:#ffffff;
-  font-size:18px;
-  cursor:pointer;
+.input::placeholder {
+    color: #a0a7b3;
 }
 
-.send:disabled{
-  opacity:.45;
-  cursor:not-allowed;
+.send {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 13px;
+    background: #1f2937;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
 }
 
+.send:hover {
+    background: #111827;
+}
+
+.send:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.tip {
+    width: min(900px, 100%);
+    margin: 8px auto 0;
+    text-align: center;
+    color: #9aa1ad;
+    font-size: 11px;
+}
 
 /* =========================
-   AI 加载界面
+   Mobile overlay
 ========================= */
 
-.loading{
-  position:fixed;
-  inset:0;
-  z-index:100;
-  background:#f5f7fb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:20px;
+.sidebar-overlay {
+    display: none;
 }
 
-.loading-box{
-  width:min(420px,90vw);
+/* =========================
+   Scrollbar
+========================= */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.loading-icon{
-  width:90px;
-  height:90px;
-  margin:0 auto 20px;
-  border-radius:28px;
-  background:#111827;
-  color:#ffffff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:40px;
+::-webkit-scrollbar-thumb {
+    background: #cfd4dd;
+    border-radius: 999px;
 }
 
-.loading h2{
-  margin:0 0 10px;
-  font-size:30px;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.loading-text{
-  min-height:50px;
-  color:#6b7280;
-  line-height:1.7;
-  white-space:pre-line;
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 700px) {
+
+    .loading {
+        padding: 20px;
+    }
+
+    .logo {
+        width: 150px;
+        height: 150px;
+        border-radius: 42px;
+        font-size: 66px;
+        margin-bottom: 30px;
+    }
+
+    .loading-title {
+        font-size: 34px;
+    }
+
+    .loading-status {
+        font-size: 20px;
+    }
+
+    .loading-error {
+        font-size: 14px;
+    }
+
+    .sidebar {
+        position: fixed;
+        z-index: 5000;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        width: min(300px, 86vw);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        z-index: 4999;
+        inset: 0;
+        display: none;
+        background: rgba(15, 23, 42, 0.35);
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+
+    .topbar {
+        height: 58px;
+        padding: 0 12px;
+    }
+
+    .messages {
+        padding: 20px 10px 145px;
+    }
+
+    .message {
+        gap: 8px;
+        margin-bottom: 18px;
+    }
+
+    .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    .content {
+        max-width: calc(100% - 42px);
+        padding: 11px 13px;
+        border-radius: 14px;
+    }
+
+    .message-text {
+        font-size: 15px;
+        line-height: 1.7;
+    }
+
+    .composer-area {
+        padding: 10px 10px 12px;
+    }
+
+    .composer {
+        padding: 7px;
+        border-radius: 16px;
+    }
+
+    .input {
+        font-size: 16px;
+    }
+
+    .send {
+        width: 44px;
+        height: 44px;
+    }
+
+    .tip {
+        font-size: 10px;
+    }
 }
 
-.progress{
-  width:100%;
-  height:9px;
-  margin-top:20px;
-  overflow:hidden;
-  border-radius:10px;
-  background:#e5e7eb;
-}
+/* =========================
+   Small phone
+========================= */
 
-.progress-bar{
-  width:0%;
-  height:100%;
-  border-radius:10px;
-  background:#111827;
-  transition:width .2s ease;
-}
+@media (max-width: 420px) {
 
-.retry{
-  margin-top:20px;
-  padding:11px 22px;
-  border:0;
-  border-radius:12px;
-  background:#111827;
-  color:#ffffff;
-  font-size:15px;
-  cursor:pointer;
-}
+    .logo {
+        width: 128px;
+        height: 128px;
+        border-radius: 36px;
+        font-size: 56px;
+    }
 
-.retry:hover{
-  opacity:.9;
-}
+    .loading-title {
+        font-size: 30px;
+    }
 
+    .loading-status {
+        font-size: 18px;
+    }
+
+    .loading-actions .btn {
+        width: 100%;
+    }
+}
 </style>
-
 </head>
+
 <body>
 
 <!-- =========================
-     AI 加载界面
+     Loading screen
 ========================= -->
 
-<div
-  class="loading"
-  id="loading"
->
+<div id="loading" class="loading">
 
-  <div class="loading-box">
+    <div class="loading-box">
 
-    <div class="loading-icon">
-      AI
-    </div>
-
-    <h2>
-      我的本地 AI
-    </h2>
-
-    <div
-      class="loading-text"
-      id="loadingText"
-    >
-      AI 尚未启动
-    </div>
-
-    <div class="progress">
-
-      <div
-        class="progress-bar"
-        id="progressBar"
-      ></div>
-
-    </div>
-
-    <button
-      class="retry"
-      id="retry"
-      style="display:block;"
-    >
-      开始加载 AI
-    </button>
-
-  </div>
-
-</div>
-
-
-<!-- =========================
-     主应用
-========================= -->
-
-<div class="app">
-
-  <!-- 左侧历史记录 -->
-
-  <aside
-    class="sidebar"
-    id="sidebar"
-  >
-
-    <div class="sidebar-top">
-
-      <button
-        class="newchat"
-        id="newChat"
-      >
-        ＋ 新建聊天
-      </button>
-
-    </div>
-
-    <div class="history-title">
-      聊天记录
-    </div>
-
-    <div
-      class="history"
-      id="history"
-    ></div>
-
-  </aside>
-
-
-  <!-- 主区域 -->
-
-  <main class="main">
-
-    <header class="header">
-
-      <button
-        class="menu"
-        id="menu"
-        aria-label="菜单"
-      >
-        ☰
-      </button>
-
-      <div class="header-title">
-        我的本地 AI
-      </div>
-
-      <div
-        class="status"
-        id="status"
-      >
-
-        <span class="status-dot"></span>
-
-        <span id="statusText">
-          AI 未加载
-        </span>
-
-      </div>
-
-    </header>
-
-
-    <!-- 消息 -->
-
-    <section
-      class="messages"
-      id="messages"
-    >
-
-      <div class="welcome">
-
-        <div class="welcome-icon">
-          AI
+        <div class="logo">
+            AI
         </div>
 
-        <h1>
-          你好 👋
-        </h1>
+        <div class="loading-title">
+            我的本地 AI
+        </div>
 
-        <p>
-          我是你的本地 AI 助手。<br>
-          点击上面的「开始加载 AI」后，就可以开始聊天。
-        </p>
+        <div id="loadingStatus" class="loading-status">
+            准备就绪，请点击下面按钮开始加载 AI
+        </div>
 
-      </div>
+        <div id="loadingError" class="loading-error"></div>
 
-    </section>
+        <div class="progress-wrap">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
 
+        <div id="loadingPercent" class="loading-percent">
+            0%
+        </div>
 
-    <!-- 输入区域 -->
+        <div class="loading-actions">
 
-    <div class="input-area">
+            <button
+                id="loadButton"
+                class="btn btn-primary"
+                type="button"
+            >
+                开始加载 AI
+            </button>
 
-      <div class="input-box">
-
-        <textarea
-          id="input"
-          rows="1"
-          placeholder="输入消息……"
-          disabled
-        ></textarea>
-
-        <button
-          class="send"
-          id="send"
-          disabled
-        >
-          ➤
-        </button>
-
-      </div>
+        </div>
 
     </div>
 
-  </main>
-
 </div>
 
-
 <!-- =========================
-     JavaScript
+     Main application
 ========================= -->
+
+<div id="app" class="app hidden">
+
+    <!-- Sidebar -->
+
+    <aside id="sidebar" class="sidebar">
+
+        <div class="sidebar-header">
+
+            <button
+                id="newChat"
+                class="new-chat"
+                type="button"
+            >
+                ＋ 新建聊天
+            </button>
+
+        </div>
+
+        <div class="history-title">
+            聊天记录
+        </div>
+
+        <div id="history" class="history"></div>
+
+    </aside>
+
+    <div
+        id="sidebarOverlay"
+        class="sidebar-overlay"
+    ></div>
+
+    <!-- Main -->
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <button
+                id="menu"
+                class="menu-btn"
+                type="button"
+                aria-label="打开菜单"
+            >
+                ☰
+            </button>
+
+            <div class="chat-title">
+
+                <div
+                    id="chatTitle"
+                    class="chat-title-main"
+                >
+                    新聊天
+                </div>
+
+            </div>
+
+            <div class="status">
+
+                <span
+                    id="statusDot"
+                    class="status-dot"
+                ></span>
+
+                <span id="statusText">
+                    AI 已准备
+                </span>
+
+            </div>
+
+        </header>
+
+        <!-- Messages -->
+
+        <section
+            id="messages"
+            class="messages"
+        >
+
+            <div
+                id="messagesInner"
+                class="messages-inner"
+            ></div>
+
+        </section>
+
+        <!-- Composer -->
+
+        <div class="composer-area">
+
+            <div class="composer">
+
+                <textarea
+                    id="input"
+                    class="input"
+                    rows="1"
+                    placeholder="输入消息……"
+                    disabled
+                ></textarea>
+
+                <button
+                    id="send"
+                    class="send"
+                    type="button"
+                    disabled
+                    aria-label="发送"
+                >
+                    ↑
+                </button>
+
+            </div>
+
+            <div class="tip">
+                AI 在你的浏览器本地运行，首次加载需要下载模型。
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
 
 <script type="module">
 
-/* =========================
-   模型
-========================= */
+/* =========================================================
+   Configuration
+========================================================= */
+
+/*
+ * 重要：
+ * 这里使用的是 WebLLM 当前支持的模型。
+ *
+ * 不要再改回：
+ * LFM2.5-350M-Instruct-q4f16_1-MLC
+ *
+ * 因为那个模型 ID 不在当前 WebLLM 的预构建模型列表中。
+ */
 
 const MODEL =
-  "Llama3.2-1B-Instruct-q4f16_1-MLC";
+    "Llama-3.2-1B-Instruct-q4f16_1-MLC";
+
+const STORAGE_KEY =
+    "myAI_chats_v2";
+
+const SYSTEM_PROMPT =
+    `
+你是一个运行在用户浏览器本地的中文 AI 助手。
+
+请遵守以下规则：
+
+1. 默认使用简体中文回答。
+2. 回答要自然、清楚、直接。
+3. 如果用户使用其他语言提问，可以使用对应语言回答。
+4. 不要假装自己调用了不存在的工具。
+5. 不知道的事情要诚实说明。
+6. 对代码问题给出可以直接使用的代码。
+7. 用户如果要求一步一步操作，要按步骤说明。
+8. 不要在每次回答结尾机械地说“如果还有问题可以问我”。
+`.trim();
 
 
-/* =========================
-   全局变量
-========================= */
+/* =========================================================
+   DOM
+========================================================= */
+
+const loading =
+    document.getElementById("loading");
+
+const loadingStatus =
+    document.getElementById("loadingStatus");
+
+const loadingError =
+    document.getElementById("loadingError");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+const loadingPercent =
+    document.getElementById("loadingPercent");
+
+const loadButton =
+    document.getElementById("loadButton");
+
+const app =
+    document.getElementById("app");
+
+const sidebar =
+    document.getElementById("sidebar");
+
+const sidebarOverlay =
+    document.getElementById("sidebarOverlay");
+
+const newChatBtn =
+    document.getElementById("newChat");
+
+const historyEl =
+    document.getElementById("history");
+
+const menuBtn =
+    document.getElementById("menu");
+
+const chatTitle =
+    document.getElementById("chatTitle");
+
+const statusDot =
+    document.getElementById("statusDot");
+
+const statusText =
+    document.getElementById("statusText");
+
+const messagesEl =
+    document.getElementById("messages");
+
+const messagesInner =
+    document.getElementById("messagesInner");
+
+const input =
+    document.getElementById("input");
+
+const sendBtn =
+    document.getElementById("send");
+
+
+/* =========================================================
+   State
+========================================================= */
 
 let engine = null;
 
-let currentChat = null;
+let chats = [];
+
+let currentChatId = null;
 
 let isGenerating = false;
 
-
-/* =========================
-   页面元素
-========================= */
-
-const loading =
-  document.getElementById("loading");
-
-const loadingText =
-  document.getElementById("loadingText");
-
-const progressBar =
-  document.getElementById("progressBar");
-
-const retry =
-  document.getElementById("retry");
-
-const sidebar =
-  document.getElementById("sidebar");
-
-const history =
-  document.getElementById("history");
-
-const messages =
-  document.getElementById("messages");
-
-const input =
-  document.getElementById("input");
-
-const send =
-  document.getElementById("send");
-
-const newChatBtn =
-  document.getElementById("newChat");
-
-const menuBtn =
-  document.getElementById("menu");
-
-const status =
-  document.getElementById("status");
-
-const statusText =
-  document.getElementById("statusText");
+let isLoading = false;
 
 
-/* =========================
-   聊天记录
-========================= */
+/* =========================================================
+   Utilities
+========================================================= */
 
-let chats = {};
+function createId() {
 
-try{
-
-  chats =
-    JSON.parse(
-      localStorage.getItem(
-        "myAI_chats"
-      ) || "{}"
+    return (
+        Date.now().toString(36) +
+        Math.random()
+            .toString(36)
+            .slice(2, 10)
     );
-
-}catch(error){
-
-  chats = {};
-
 }
 
 
-/* =========================
-   保存
-========================= */
+function escapeHtml(text) {
 
-function saveChats(){
+    const div =
+        document.createElement("div");
 
-  try{
+    div.textContent =
+        text == null ? "" : String(text);
 
-    localStorage.setItem(
-      "myAI_chats",
-      JSON.stringify(chats)
-    );
-
-  }catch(error){
-
-    console.error(
-      "保存聊天记录失败",
-      error
-    );
-
-  }
-
+    return div.innerHTML;
 }
 
 
-/* =========================
-   状态
-========================= */
+function nowText() {
+
+    const date =
+        new Date();
+
+    return date.toLocaleString(
+        "zh-CN",
+        {
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+}
+
 
 function setStatus(
-  text,
-  type = ""
-){
+    text,
+    type = "ready"
+) {
 
-  statusText.textContent = text;
+    statusText.textContent =
+        text;
 
-  status.className =
-    "status " + type;
+    statusDot.className =
+        "status-dot";
 
+    if (type === "ready") {
+
+        statusDot.classList.add(
+            "ready"
+        );
+
+    } else if (type === "loading") {
+
+        statusDot.classList.add(
+            "loading"
+        );
+
+    } else if (type === "error") {
+
+        statusDot.classList.add(
+            "error"
+        );
+    }
 }
 
 
-/* =========================
-   新建聊天
-========================= */
+function setProgress(value) {
 
-function newChat(){
+    let percent =
+        Number(value);
 
-  const id =
-    Date.now().toString();
-
-  chats[id] = {
-
-    title:"新聊天",
-
-    messages:[],
-
-    createdAt:
-      Date.now()
-
-  };
-
-  currentChat = id;
-
-  saveChats();
-
-  renderHistory();
-
-  renderMessages();
-
-  input.focus();
-
-}
-
-
-/* =========================
-   删除聊天
-========================= */
-
-function deleteChat(id){
-
-  const ok =
-    confirm(
-      "确定要删除这个聊天吗？"
-    );
-
-  if(!ok){
-    return;
-  }
-
-  delete chats[id];
-
-  const ids =
-    Object.keys(chats);
-
-  if(currentChat === id){
-
-    if(ids.length > 0){
-
-      currentChat =
-        ids[ids.length - 1];
-
-    }else{
-
-      currentChat = null;
-
+    if (!Number.isFinite(percent)) {
+        percent = 0;
     }
 
-  }
-
-  saveChats();
-
-  renderHistory();
-
-  renderMessages();
-
-}
-
-
-/* =========================
-   打开聊天
-========================= */
-
-function openChat(id){
-
-  if(!chats[id]){
-    return;
-  }
-
-  currentChat = id;
-
-  renderHistory();
-
-  renderMessages();
-
-  if(
-    window.innerWidth <= 700
-  ){
-
-    sidebar.classList.remove(
-      "open"
-    );
-
-  }
-
-}
-
-
-/* =========================
-   历史记录
-========================= */
-
-function renderHistory(){
-
-  history.innerHTML = "";
-
-  const ids =
-    Object.keys(chats)
-      .sort(
-        (a,b) =>
-          (chats[b].createdAt || 0) -
-          (chats[a].createdAt || 0)
-      );
-
-  ids.forEach(id => {
-
-    const chat =
-      chats[id];
-
-    const item =
-      document.createElement(
-        "div"
-      );
-
-    item.className =
-      "chat-item" +
-      (
-        id === currentChat
-          ? " active"
-          : ""
-      );
-
-    item.addEventListener(
-      "click",
-      () => openChat(id)
-    );
-
-    const title =
-      document.createElement(
-        "div"
-      );
-
-    title.className =
-      "chat-title";
-
-    title.textContent =
-      chat.title ||
-      "新聊天";
-
-    const del =
-      document.createElement(
-        "button"
-      );
-
-    del.className =
-      "delete-chat";
-
-    del.textContent =
-      "×";
-
-    del.title =
-      "删除聊天";
-
-    del.addEventListener(
-      "click",
-      event => {
-
-        event.stopPropagation();
-
-        deleteChat(id);
-
-      }
-    );
-
-    item.appendChild(title);
-
-    item.appendChild(del);
-
-    history.appendChild(item);
-
-  });
-
-}
-
-
-/* =========================
-   渲染消息
-========================= */
-
-function renderMessages(){
-
-  messages.innerHTML = "";
-
-  if(!currentChat){
-
-    showWelcome();
-
-    return;
-
-  }
-
-  const chat =
-    chats[currentChat];
-
-  if(
-    !chat ||
-    !chat.messages ||
-    chat.messages.length === 0
-  ){
-
-    showWelcome();
-
-    return;
-
-  }
-
-  chat.messages.forEach(
-    message => {
-
-      addMessageElement(
-        message.role,
-        message.content
-      );
-
-    }
-  );
-
-  scrollToBottom();
-
-}
-
-
-/* =========================
-   欢迎页面
-========================= */
-
-function showWelcome(){
-
-  messages.innerHTML = `
-
-    <div class="welcome">
-
-      <div class="welcome-icon">
-        AI
-      </div>
-
-      <h1>
-        你好 👋
-      </h1>
-
-      <p>
-        我是你的本地 AI 助手。<br>
-        可以连续聊天，聊天记录会保存在本机。
-      </p>
-
-    </div>
-
-  `;
-
-}
-
-
-/* =========================
-   添加消息
-========================= */
-
-function addMessageElement(
-  role,
-  text
-){
-
-  const row =
-    document.createElement(
-      "div"
-    );
-
-  row.className =
-    "message " + role;
-
-  const avatar =
-    document.createElement(
-      "div"
-    );
-
-  avatar.className =
-    "avatar";
-
-  avatar.textContent =
-    role === "user"
-      ? "你"
-      : "AI";
-
-  const content =
-    document.createElement(
-      "div"
-    );
-
-  content.className =
-    "content";
-
-  content.textContent =
-    text || "";
-
-  row.appendChild(avatar);
-
-  row.appendChild(content);
-
-  messages.appendChild(row);
-
-  return content;
-
-}
-
-
-/* =========================
-   滚动到底部
-========================= */
-
-function scrollToBottom(){
-
-  messages.scrollTop =
-    messages.scrollHeight;
-
-}
-    /* =========================
-   加载 AI
-========================= */
-
-async function loadAI(){
-
-  retry.disabled = true;
-
-  retry.textContent =
-    "正在加载……";
-
-  progressBar.style.width =
-    "0%";
-
-  loadingText.textContent =
-    "正在检查 WebGPU……";
-
-  setStatus(
-    "正在加载 AI……"
-  );
-
-  try{
-
-    /* -------------------------
-       检查 WebGPU
-    ------------------------- */
-
-    if(
-      !navigator.gpu
-    ){
-
-      throw new Error(
-        "当前浏览器不支持 WebGPU，请使用新版 Chrome。"
-      );
-
-    }
-
-    const adapter =
-      await navigator.gpu.requestAdapter();
-
-    if(!adapter){
-
-      throw new Error(
-        "没有找到可用的 GPU。"
-      );
-
-    }
+    percent =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                percent * 100
+            )
+        );
+
+    const rounded =
+        Math.round(percent);
 
     progressBar.style.width =
-      "5%";
+        rounded + "%";
 
-    loadingText.textContent =
-      "✓ WebGPU 正常\n正在加载 WebLLM……";
-
-
-    /* -------------------------
-       加载 WebLLM
-    ------------------------- */
-
-    const webllm =
-      await import(
-        "https://esm.run/@mlc-ai/web-llm"
-      );
-
-    progressBar.style.width =
-      "10%";
-
-    loadingText.textContent =
-      "✓ WebLLM 正常\n正在准备 AI 模型……";
+    loadingPercent.textContent =
+        rounded + "%";
+}
 
 
-    /* -------------------------
-       创建 AI 引擎
-    ------------------------- */
+/* =========================================================
+   Local Storage
+========================================================= */
 
-    engine =
-      await webllm.CreateMLCEngine(
-        MODEL,
-        {
+function saveChats() {
 
-          initProgressCallback:
-            progress => {
+    try {
 
-              let value =
-                Number(
-                  progress?.progress
-                );
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(chats)
+        );
 
-              if(
-                !Number.isFinite(value)
-              ){
+    } catch (error) {
 
-                value = 0;
+        console.error(
+            "保存聊天记录失败:",
+            error
+        );
+    }
+}
 
-              }
 
-              value =
-                Math.max(
-                  0,
-                  Math.min(
-                    1,
-                    value
-                  )
-                );
+function loadChats() {
 
-              const percent =
-                Math.round(
-                  value * 100
-                );
+    try {
 
-              progressBar.style.width =
-                percent + "%";
+        const raw =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
 
-              loadingText.textContent =
-                "正在加载 AI 模型……\n" +
-                (
-                  progress?.text ||
-                  "正在准备模型"
-                ) +
-                "\n" +
-                percent +
-                "%";
+        if (!raw) {
 
-            }
+            chats = [];
 
+            return;
         }
-      );
 
+        const parsed =
+            JSON.parse(raw);
 
-    /* -------------------------
-       加载完成
-    ------------------------- */
+        if (Array.isArray(parsed)) {
 
-    progressBar.style.width =
-      "100%";
+            chats = parsed;
 
-    loadingText.textContent =
-      "✓ AI 加载成功！";
+        } else {
 
-    setStatus(
-      "AI 已加载",
-      "ok"
-    );
+            chats = [];
+        }
 
-    input.disabled =
-      false;
+    } catch (error) {
 
-    send.disabled =
-      false;
+        console.error(
+            "读取聊天记录失败:",
+            error
+        );
 
-    retry.style.display =
-      "none";
-
-    setTimeout(
-      () => {
-
-        loading.style.display =
-          "none";
-
-        input.focus();
-
-      },
-      500
-    );
-
-
-    /* -------------------------
-       如果没有聊天
-    ------------------------- */
-
-    if(!currentChat){
-
-      const ids =
-        Object.keys(chats);
-
-      if(ids.length > 0){
-
-        currentChat =
-          ids.sort(
-            (a,b) =>
-              (
-                chats[b].createdAt || 0
-              ) -
-              (
-                chats[a].createdAt || 0
-              )
-          )[0];
-
-      }else{
-
-        newChat();
-
-      }
-
+        chats = [];
     }
-
-    renderHistory();
-
-    renderMessages();
-
-
-  }catch(error){
-
-    console.error(
-      "AI 加载失败:",
-      error
-    );
-
-    engine = null;
-
-    input.disabled =
-      true;
-
-    send.disabled =
-      true;
-
-    setStatus(
-      "加载失败",
-      "error"
-    );
-
-    loadingText.textContent =
-      "AI 加载失败\n\n" +
-      (
-        error?.message ||
-        String(error)
-      );
-
-    progressBar.style.width =
-      "0%";
-
-    retry.disabled =
-      false;
-
-    retry.textContent =
-      "重新加载 AI";
-
-    retry.style.display =
-      "inline-block";
-
-  }
-
 }
 
 
-/* =========================
-   发送消息
-========================= */
+/* =========================================================
+   Chat Data
+========================================================= */
 
-async function sendMessage(){
+function createChat() {
 
-  if(isGenerating){
-    return;
-  }
+    const chat = {
 
-  const text =
-    input.value.trim();
+        id: createId(),
 
-  if(
-    !text ||
-    !engine
-  ){
+        title: "新聊天",
 
-    return;
+        messages: [],
 
-  }
+        createdAt: Date.now(),
 
+        updatedAt: Date.now()
 
-  /* -------------------------
-     创建聊天
-  ------------------------- */
+    };
 
-  if(!currentChat){
+    chats.unshift(chat);
 
-    newChat();
-
-  }
-
-  const chat =
-    chats[currentChat];
-
-  if(!chat){
-    return;
-  }
-
-
-  /* -------------------------
-     设置标题
-  ------------------------- */
-
-  if(
-    !chat.messages ||
-    chat.messages.length === 0
-  ){
-
-    chat.title =
-      text.length > 18
-        ? text.slice(0,18) + "…"
-        : text;
-
-  }
-
-
-  /* -------------------------
-     保存用户消息
-  ------------------------- */
-
-  chat.messages.push({
-
-    role:"user",
-
-    content:text
-
-  });
-
-  saveChats();
-
-  renderHistory();
-
-
-  /* -------------------------
-     删除欢迎页
-  ------------------------- */
-
-  const welcome =
-    messages.querySelector(
-      ".welcome"
-    );
-
-  if(welcome){
-
-    welcome.remove();
-
-  }
-
-
-  /* -------------------------
-     显示用户消息
-  ------------------------- */
-
-  addMessageElement(
-    "user",
-    text
-  );
-
-  scrollToBottom();
-
-
-  /* -------------------------
-     清空输入
-  ------------------------- */
-
-  input.value = "";
-
-  input.style.height =
-    "auto";
-
-
-  /* -------------------------
-     锁定按钮
-  ------------------------- */
-
-  isGenerating =
-    true;
-
-  send.disabled =
-    true;
-
-  input.disabled =
-    true;
-
-  setStatus(
-    "正在思考……"
-  );
-
-
-  /* -------------------------
-     AI 消息气泡
-  ------------------------- */
-
-  const assistantContent =
-    addMessageElement(
-      "assistant",
-      "正在思考……"
-    );
-
-  scrollToBottom();
-
-
-  let answer = "";
-
-
-  try{
-
-    /* -------------------------
-       构造上下文
-    ------------------------- */
-
-    const conversation = [
-
-      {
-        role:"system",
-
-        content:
-          "你是一个友好、聪明、简洁的中文 AI 助手。" +
-          "请直接回答用户的问题。" +
-          "如果不知道答案，请诚实说明。" +
-          "回答尽量清晰，不要重复用户的问题。"
-      },
-
-      ...chat.messages
-
-    ];
-
-
-    /* -------------------------
-       请求 AI
-    ------------------------- */
-
-    const response =
-      await engine.chat.completions.create({
-
-        messages:
-          conversation,
-
-        temperature:
-          0.7,
-
-        max_tokens:
-          300,
-
-        stream:
-          true
-
-      });
-
-
-    /* -------------------------
-       流式输出
-    ------------------------- */
-
-    assistantContent.textContent =
-      "";
-
-    for await(
-      const chunk of response
-    ){
-
-      const piece =
-        chunk
-          ?.choices?.[0]
-          ?.delta
-          ?.content;
-
-      if(piece){
-
-        answer += piece;
-
-        assistantContent.textContent =
-          answer;
-
-        scrollToBottom();
-
-      }
-
-    }
-
-
-    /* -------------------------
-       保存 AI 回答
-    ------------------------- */
-
-    if(!answer){
-
-      answer =
-        "我这次没有生成出有效回答，请再试一次。";
-
-      assistantContent.textContent =
-        answer;
-
-    }
-
-    chat.messages.push({
-
-      role:"assistant",
-
-      content:answer
-
-    });
+    currentChatId =
+        chat.id;
 
     saveChats();
 
-    setStatus(
-      "AI 已加载",
-      "ok"
-    );
+    renderHistory();
 
+    renderCurrentChat();
 
-  }catch(error){
-
-    console.error(
-      "回答错误:",
-      error
-    );
-
-    assistantContent.textContent =
-      "抱歉，回答时出现错误：\n" +
-      (
-        error?.message ||
-        String(error)
-      );
-
-    setStatus(
-      "回答出错",
-      "error"
-    );
-
-  }
-
-
-  /* -------------------------
-     恢复输入
-  ------------------------- */
-
-  isGenerating =
-    false;
-
-  send.disabled =
-    false;
-
-  input.disabled =
-    false;
-
-  input.focus();
-
-  scrollToBottom();
-
+    return chat;
 }
 
 
-/* =========================
-   初始化聊天
-========================= */
+function getCurrentChat() {
 
-function initChats(){
+    return chats.find(
+        chat =>
+            chat.id === currentChatId
+    ) || null;
+}
 
-  const ids =
-    Object.keys(chats);
 
-  if(ids.length === 0){
+function getOrCreateChat() {
 
-    currentChat = null;
+    let chat =
+        getCurrentChat();
+
+    if (!chat) {
+
+        chat =
+            createChat();
+    }
+
+    return chat;
+}
+
+
+function updateChatTitle(
+    chat,
+    text
+) {
+
+    if (!chat) {
+        return;
+    }
+
+    if (
+        chat.title !== "新聊天" &&
+        chat.title.trim() !== ""
+    ) {
+        return;
+    }
+
+    const clean =
+        String(text || "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+    if (!clean) {
+        return;
+    }
+
+    chat.title =
+        clean.length > 30
+            ? clean.slice(0, 30) + "…"
+            : clean;
+}
+
+
+function deleteChat(id) {
+
+    const index =
+        chats.findIndex(
+            chat => chat.id === id
+        );
+
+    if (index === -1) {
+        return;
+    }
+
+    const chat =
+        chats[index];
+
+    const confirmed =
+        confirm(
+            `确定删除聊天“${chat.title}”吗？`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    chats.splice(
+        index,
+        1
+    );
+
+    if (
+        currentChatId === id
+    ) {
+
+        if (chats.length > 0) {
+
+            currentChatId =
+                chats[0].id;
+
+        } else {
+
+            currentChatId =
+                null;
+        }
+    }
+
+    saveChats();
 
     renderHistory();
 
-    renderMessages();
-
-    return;
-
-  }
-
-  ids.sort(
-    (a,b) =>
-      (
-        chats[b].createdAt || 0
-      ) -
-      (
-        chats[a].createdAt || 0
-      )
-  );
-
-  currentChat =
-    ids[0];
-
-  renderHistory();
-
-  renderMessages();
-
+    renderCurrentChat();
 }
-    /* =========================
-   新建聊天按钮
-========================= */
 
-newChatBtn.addEventListener(
-  "click",
-  () => {
 
-    if(isGenerating){
-      return;
+/* =========================================================
+   History UI
+========================================================= */
+
+function renderHistory() {
+
+    historyEl.innerHTML = "";
+
+    if (chats.length === 0) {
+
+        const empty =
+            document.createElement("div");
+
+        empty.style.padding =
+            "15px 10px";
+
+        empty.style.color =
+            "#9aa1ad";
+
+        empty.style.fontSize =
+            "13px";
+
+        empty.textContent =
+            "还没有聊天记录";
+
+        historyEl.appendChild(
+            empty
+        );
+
+        return;
     }
 
-    newChat();
+    for (const chat of chats) {
 
-    if(
-      window.innerWidth <= 700
-    ){
+        const item =
+            document.createElement("div");
 
-      sidebar.classList.remove(
-        "open"
-      );
+        item.className =
+            "history-item";
 
+        if (
+            chat.id === currentChatId
+        ) {
+
+            item.classList.add(
+                "active"
+            );
+        }
+
+        const name =
+            document.createElement("div");
+
+        name.className =
+            "history-name";
+
+        name.textContent =
+            chat.title ||
+            "新聊天";
+
+        const del =
+            document.createElement("button");
+
+        del.className =
+            "history-delete";
+
+        del.type =
+            "button";
+
+        del.textContent =
+            "×";
+
+        del.title =
+            "删除聊天";
+
+        del.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                deleteChat(
+                    chat.id
+                );
+            }
+        );
+
+        item.appendChild(name);
+
+        item.appendChild(del);
+
+        item.addEventListener(
+            "click",
+            () => {
+
+                currentChatId =
+                    chat.id;
+
+                saveChats();
+
+                renderHistory();
+
+                renderCurrentChat();
+
+                closeSidebar();
+            }
+        );
+
+        historyEl.appendChild(
+            item
+        );
     }
-
-  }
-);
+}
 
 
-/* =========================
-   手机菜单
-========================= */
+/* =========================================================
+   Message UI
+========================================================= */
 
-menuBtn.addEventListener(
-  "click",
-  () => {
+function renderEmpty() {
 
-    sidebar.classList.toggle(
-      "open"
+    messagesInner.innerHTML = `
+        <div class="empty">
+            <div class="empty-logo">AI</div>
+            <div class="empty-title">
+                有什么可以帮你？
+            </div>
+            <div class="empty-text">
+                这是一个运行在浏览器本地的 AI。
+                <br>
+                输入消息开始聊天。
+            </div>
+        </div>
+    `;
+}
+
+
+function createMessageElement(
+    role,
+    text,
+    time
+) {
+
+    const row =
+        document.createElement("div");
+
+    row.className =
+        "message " + role;
+
+    const avatar =
+        document.createElement("div");
+
+    avatar.className =
+        "avatar";
+
+    avatar.textContent =
+        role === "user"
+            ? "你"
+            : "AI";
+
+    const content =
+        document.createElement("div");
+
+    content.className =
+        "content";
+
+    const messageText =
+        document.createElement("div");
+
+    messageText.className =
+        "message-text";
+
+    messageText.textContent =
+        text || "";
+
+    const meta =
+        document.createElement("div");
+
+    meta.className =
+        "message-meta";
+
+    meta.textContent =
+        time || "";
+
+    content.appendChild(
+        messageText
     );
 
-  }
-);
+    content.appendChild(
+        meta
+    );
+
+    row.appendChild(
+        avatar
+    );
+
+    row.appendChild(
+        content
+    );
+
+    return {
+        row,
+        content,
+        messageText
+    };
+}
 
 
-/* =========================
-   点击消息区域
-========================= */
+function renderCurrentChat() {
 
-messages.addEventListener(
-  "click",
-  () => {
+    const chat =
+        getCurrentChat();
 
-    if(
-      window.innerWidth <= 700
-    ){
+    messagesInner.innerHTML = "";
 
-      sidebar.classList.remove(
+    if (!chat) {
+
+        chatTitle.textContent =
+            "新聊天";
+
+        renderEmpty();
+
+        return;
+    }
+
+    chatTitle.textContent =
+        chat.title ||
+        "新聊天";
+
+    if (
+        !Array.isArray(
+            chat.messages
+        ) ||
+        chat.messages.length === 0
+    ) {
+
+        renderEmpty();
+
+        return;
+    }
+
+    for (
+        const message
+        of chat.messages
+    ) {
+
+        if (
+            message.role !== "user" &&
+            message.role !== "assistant"
+        ) {
+            continue;
+        }
+
+        const element =
+            createMessageElement(
+                message.role,
+                message.content,
+                message.time
+            );
+
+        messagesInner.appendChild(
+            element.row
+        );
+    }
+
+    scrollToBottom();
+}
+
+
+function scrollToBottom() {
+
+    requestAnimationFrame(
+        () => {
+
+            messagesEl.scrollTop =
+                messagesEl.scrollHeight;
+        }
+    );
+}
+
+
+/* =========================================================
+   Sidebar
+========================================================= */
+
+function openSidebar() {
+
+    sidebar.classList.add(
         "open"
-      );
+    );
 
+    sidebarOverlay.classList.add(
+        "show"
+    );
+}
+
+
+function closeSidebar() {
+
+    sidebar.classList.remove(
+        "open"
+    );
+
+    sidebarOverlay.classList.remove(
+        "show"
+    );
+}
+
+
+/* =========================================================
+   WebGPU Check
+========================================================= */
+
+async function checkWebGPU() {
+
+    if (
+        !("gpu" in navigator)
+    ) {
+
+        throw new Error(
+            "当前浏览器没有检测到 WebGPU。请使用较新的 Chrome，并确认手机/浏览器支持 WebGPU。"
+        );
     }
 
-  }
-);
+    const adapter =
+        await navigator.gpu.requestAdapter();
 
+    if (!adapter) {
 
-/* =========================
-   发送按钮
-========================= */
-
-send.addEventListener(
-  "click",
-  () => {
-
-    sendMessage();
-
-  }
-);
-
-
-/* =========================
-   输入框回车
-========================= */
-
-input.addEventListener(
-  "keydown",
-  event => {
-
-    if(
-      event.key === "Enter" &&
-      !event.shiftKey
-    ){
-
-      event.preventDefault();
-
-      sendMessage();
-
+        throw new Error(
+            "浏览器检测到了 WebGPU，但没有获得可用的 GPU 适配器。"
+        );
     }
 
-  }
-);
+    return adapter;
+}
 
 
-/* =========================
-   输入框自动高度
-========================= */
+/* =========================================================
+   Load AI
+========================================================= */
 
-input.addEventListener(
-  "input",
-  () => {
+async function loadAI() {
+
+    if (isLoading) {
+        return;
+    }
+
+    if (engine) {
+        return;
+    }
+
+    isLoading = true;
+
+    loadButton.disabled =
+        true;
+
+    loadingError.textContent =
+        "";
+
+    loadingStatus.textContent =
+        "正在检查浏览器的 WebGPU……";
+
+    setProgress(0);
+
+    try {
+
+        await checkWebGPU();
+
+        loadingStatus.textContent =
+            "正在连接 AI 引擎……";
+
+        /*
+         * 从 CDN 动态加载 WebLLM。
+         *
+         * 这样 GitHub Pages 不需要 Node.js，
+         * 也不需要 npm。
+         */
+
+        const webllm =
+            await import(
+                "https://esm.run/@mlc-ai/web-llm"
+            );
+
+        loadingStatus.textContent =
+            "正在准备 AI 模型……";
+
+        setStatus(
+            "正在加载 AI",
+            "loading"
+        );
+
+        /*
+         * WebLLM 下载模型时会不断调用这个回调。
+         */
+
+        const initProgressCallback =
+            (progress) => {
+
+                console.log(
+                    "AI loading:",
+                    progress
+                );
+
+                if (
+                    progress &&
+                    typeof progress.progress === "number"
+                ) {
+
+                    setProgress(
+                        progress.progress
+                    );
+                }
+
+                if (
+                    progress &&
+                    progress.text
+                ) {
+
+                    loadingStatus.textContent =
+                        progress.text;
+                }
+            };
+
+        /*
+         * 创建本地 AI 引擎。
+         */
+
+        engine =
+            await webllm.CreateMLCEngine(
+                MODEL,
+                {
+                    initProgressCallback
+                }
+            );
+
+        setProgress(1);
+
+        loadingStatus.textContent =
+            "AI 加载完成！";
+
+        setStatus(
+            "AI 已就绪",
+            "ready"
+        );
+
+        /*
+         * 稍微等待一下，让用户看到 100%。
+         */
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    500
+                )
+        );
+
+        loading.classList.add(
+            "hidden"
+        );
+
+        app.classList.remove(
+            "hidden"
+        );
+
+        input.disabled =
+            false;
+
+        sendBtn.disabled =
+            false;
+
+        input.focus();
+
+        /*
+         * 第一次使用时，如果没有聊天，
+         * 自动创建一个聊天。
+         */
+
+        if (chats.length === 0) {
+
+            createChat();
+
+        } else if (!currentChatId) {
+
+            currentChatId =
+                chats[0].id;
+
+            renderHistory();
+
+            renderCurrentChat();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "AI 加载失败:",
+            error
+        );
+
+        engine = null;
+
+        const message =
+            error instanceof Error
+                ? error.message
+                : String(error);
+
+        loadingStatus.textContent =
+            "AI 加载失败";
+
+        loadingError.textContent =
+            message;
+
+        setProgress(0);
+
+        setStatus(
+            "AI 加载失败",
+            "error"
+        );
+
+        loadButton.disabled =
+            false;
+
+        loadButton.textContent =
+            "重新加载 AI";
+
+    } finally {
+
+        isLoading = false;
+    }
+}
+
+
+/* =========================================================
+   Send Message
+========================================================= */
+
+async function sendMessage() {
+
+    if (
+        !engine ||
+        isGenerating
+    ) {
+        return;
+    }
+
+    const text =
+        input.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    const chat =
+        getOrCreateChat();
+
+    /*
+     * 添加用户消息。
+     */
+
+    const userMessage = {
+
+        role: "user",
+
+        content: text,
+
+        time: nowText()
+
+    };
+
+    chat.messages.push(
+        userMessage
+    );
+
+    updateChatTitle(
+        chat,
+        text
+    );
+
+    chat.updatedAt =
+        Date.now();
+
+    saveChats();
+
+    renderHistory();
+
+    /*
+     * 清空输入框。
+     */
+
+    input.value = "";
+
+    autoResizeInput();
+
+    /*
+     * 重新渲染界面。
+     */
+
+    renderCurrentChat();
+
+    /*
+     * 创建 AI 空消息。
+     */
+
+    const assistantMessage = {
+
+        role: "assistant",
+
+        content: "",
+
+        time: nowText()
+
+    };
+
+    chat.messages.push(
+        assistantMessage
+    );
+
+    /*
+     * 创建屏幕上的 AI 消息元素。
+     */
+
+    const element =
+        createMessageElement(
+            "assistant",
+            "",
+            assistantMessage.time
+        );
+
+    messagesInner.appendChild(
+        element.row
+    );
+
+    scrollToBottom();
+
+    /*
+     * 禁用输入。
+     */
+
+    isGenerating =
+        true;
+
+    sendBtn.disabled =
+        true;
+
+    input.disabled =
+        true;
+
+    setStatus(
+        "AI 正在思考……",
+        "loading"
+    );
+
+    try {
+
+        /*
+         * 构建上下文。
+         *
+         * system + 当前聊天记录
+         */
+
+        const messages = [
+
+            {
+                role: "system",
+                content: SYSTEM_PROMPT
+            }
+
+        ];
+
+        /*
+         * 不把 system 消息保存到聊天历史，
+         * 只把 user / assistant 发给模型。
+         */
+
+        for (
+            const message
+            of chat.messages
+        ) {
+
+            if (
+                message.role === "user" ||
+                message.role === "assistant"
+            ) {
+
+                /*
+                 * 防止空消息进入上下文。
+                 */
+
+                if (
+                    message.content !== ""
+                ) {
+
+                    messages.push({
+                        role:
+                            message.role,
+                        content:
+                            message.content
+                    });
+                }
+            }
+        }
+
+        /*
+         * 创建流式回答。
+         */
+
+        const stream =
+            await engine.chat.completions.create(
+                {
+                    messages,
+
+                    temperature: 0.7,
+
+                    max_tokens: 400,
+
+                    stream: true
+                }
+            );
+
+        /*
+         * 一段一段接收 AI 回复。
+         */
+
+        for await (
+            const chunk
+            of stream
+        ) {
+
+            const delta =
+                chunk?.choices?.[0]?.delta?.content;
+
+            if (!delta) {
+                continue;
+            }
+
+            assistantMessage.content +=
+                delta;
+
+            element.messageText.textContent =
+                assistantMessage.content;
+
+            scrollToBottom();
+        }
+
+        /*
+         * 完成。
+         */
+
+        chat.updatedAt =
+            Date.now();
+
+        saveChats();
+
+        setStatus(
+            "AI 已就绪",
+            "ready"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "AI 回复失败:",
+            error
+        );
+
+        const message =
+            error instanceof Error
+                ? error.message
+                : String(error);
+
+        /*
+         * 如果 AI 已经输出了一部分，
+         * 保留它；否则显示错误。
+         */
+
+        if (
+            !assistantMessage.content
+        ) {
+
+            assistantMessage.content =
+                "AI 回复失败：\n\n" +
+                message;
+
+            element.messageText.textContent =
+                assistantMessage.content;
+        }
+
+        setStatus(
+            "回复失败",
+            "error"
+        );
+
+        saveChats();
+
+    } finally {
+
+        isGenerating =
+            false;
+
+        sendBtn.disabled =
+            false;
+
+        input.disabled =
+            false;
+
+        input.focus();
+    }
+}
+
+
+/* =========================================================
+   Input
+========================================================= */
+
+function autoResizeInput() {
 
     input.style.height =
-      "auto";
+        "auto";
+
+    const height =
+        Math.min(
+            input.scrollHeight,
+            180
+        );
 
     input.style.height =
-      Math.min(
-        input.scrollHeight,
-        150
-      ) + "px";
+        height + "px";
+}
 
-  }
+
+input.addEventListener(
+    "input",
+    autoResizeInput
 );
-
-
-/* =========================
-   开始加载按钮
-========================= */
-
-retry.addEventListener(
-  "click",
-  () => {
-
-    if(
-      retry.disabled
-    ){
-
-      return;
-
-    }
-
-    loadAI();
-
-  }
-);
-
-
-/* =========================
-   页面点击
-========================= */
-
-document.addEventListener(
-  "click",
-  event => {
-
-    if(
-      window.innerWidth > 700
-    ){
-
-      return;
-
-    }
-
-    if(
-      !sidebar.classList.contains(
-        "open"
-      )
-    ){
-
-      return;
-
-    }
-
-    const insideSidebar =
-      sidebar.contains(
-        event.target
-      );
-
-    const insideMenu =
-      menuBtn.contains(
-        event.target
-      );
-
-    if(
-      !insideSidebar &&
-      !insideMenu
-    ){
-
-      sidebar.classList.remove(
-        "open"
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================
-   窗口尺寸变化
-========================= */
-
-window.addEventListener(
-  "resize",
-  () => {
-
-    if(
-      window.innerWidth > 700
-    ){
-
-      sidebar.classList.remove(
-        "open"
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================
-   初始化
-========================= */
-
-initChats();
 
 
 /*
-   注意：
+ * Enter 发送。
+ *
+ * Shift + Enter 换行。
+ */
 
-   这里故意不自动执行 loadAI()。
+input.addEventListener(
+    "keydown",
+    event => {
 
-   用户打开网页以后，
-   必须点击：
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
 
-   「开始加载 AI」
+            event.preventDefault();
 
-   才开始下载和加载模型。
-*/
+            sendMessage();
+        }
+    }
+);
 
+
+/* =========================================================
+   Buttons
+========================================================= */
+
+loadButton.addEventListener(
+    "click",
+    loadAI
+);
+
+
+sendBtn.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+newChatBtn.addEventListener(
+    "click",
+    () => {
+
+        if (isGenerating) {
+            return;
+        }
+
+        createChat();
+
+        closeSidebar();
+
+        input.focus();
+    }
+);
+
+
+menuBtn.addEventListener(
+    "click",
+    () => {
+
+        if (
+            sidebar.classList.contains(
+                "open"
+            )
+        ) {
+
+            closeSidebar();
+
+        } else {
+
+            openSidebar();
+        }
+    }
+);
+
+
+sidebarOverlay.addEventListener(
+    "click",
+    closeSidebar
+);
+
+
+/* =========================================================
+   Startup
+========================================================= */
+
+/*
+ * 注意：
+ *
+ * 这里故意不自动 loadAI()。
+ *
+ * 用户打开网页后需要自己点击：
+ *
+ * “开始加载 AI”
+ *
+ * 这样模型不会在用户刚打开网页时
+ * 就偷偷开始下载。
+ */
+
+loadChats();
+
+if (chats.length > 0) {
+
+    currentChatId =
+        chats[0].id;
+
+} else {
+
+    currentChatId =
+        null;
+}
+
+renderHistory();
+
+renderCurrentChat();
+
+setStatus(
+    "等待加载 AI",
+    "loading"
+);
 
 </script>
 
 </body>
-
-</html>
+  </html>
